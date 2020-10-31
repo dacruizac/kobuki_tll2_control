@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<launch>
+     <!-- Spawn arguments-->
+  <!--arg name="laser_enabled" default="true"/-->
+  <!--arg name="robot_namespace" default="/"/-->
+
+  <arg name="robot_name" value="kobuki"/>
+
+  <!-- Initial Pos args -->
+  <arg name="x" default="0.0"/>
+  <arg name="y" default="0.0"/>
+  <arg name="z" default="0.01"/>
+  <arg name="roll" default="0.0"/>
+  <arg name="pitch" default="0.0"/>
+  <arg name="yaw" default="$(eval -90.0 * 3.141592 / 180.0)"/>
+
+  <!--group ns="$(arg robot_namespace)"-->
+
+    <!-- Load robot URDF description -->
+    <param 
+        name="robot_description" 
+        command="$(find xacro)/xacro '$(find kobuki_description)/urdf/kobuki_standalone.urdf.xacro'" 
+    />
+
+    <node pkg="gazebo_ros" type="spawn_model" name="spawn_$(arg robot_name)"
+        args="-x $(arg x) -y $(arg y) -z $(arg z)
+            -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)
+            -urdf -param robot_description 
+            -model $(arg robot_name)"
+            respawn="false">
+    </node>
+
+    <node 
+        pkg="robot_state_publisher" 
+        type="robot_state_publisher" 
+        name="robot_state_publisher" 
+        output="screen"
+    />
+
+</launch>
