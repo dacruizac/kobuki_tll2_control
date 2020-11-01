@@ -15,9 +15,9 @@ from pid_control import controller
 
 class control_node(object):
     def __init__(self):
-        self.controllers=controller(0.4,0.5,0.3,np.pi/3)
+        self.controllers=controller(0.4,1.0,0.3,np.pi/3)
         self.point_set=[[0, 0], [-3.5, 0], [-3.5, 3.5], [1.5, 3.5], [1.5, -1.5], [3.5, -1.5]]
-        #self.point_set+=[[3.5, -8.0], [-2.5, -8.0], [-2.5, -5.5], [1.5, -5.5], [1.5, -3.5],[-1.0, -3.5]]
+        self.point_set+=[[3.5, -8.0], [-2.5, -8.0], [-2.5, -5.5], [1.5, -5.5], [1.5, -3.5],[-1.0, -3.5]]
         # Para realizar un broadcast
         self.broadcts  = tf2_ros.TransformBroadcaster()
         self.transform = TransformStamped()
@@ -93,6 +93,8 @@ class control_node(object):
 
             self.actual_pos[:,0]=self.base_2_origin[0:2,3]
             if (np.linalg.norm(self.actual_pos-self.goal)<0.1 and len(self.point_set)>0):
+                #(np.linalg.norm(self.actual_pos-self.goal)<0.6 and len(self.point_set)>0):
+                #(np.linalg.norm(self.actual_pos-self.goal)<0.1 and len(self.point_set)>0):
                 self.goal=np.array([self.point_set.pop(0)],dtype=np.float)
                 self.goal=np.transpose(self.goal)
             
