@@ -1,0 +1,7 @@
+<launch>
+    <arg name="ang" default="-90"/>
+
+    <node pkg="kobuki_tll2_control" type="tll2_control_node.py" name="tll_control_node" args="$(arg ang) 1 1">
+        
+    </node>
+</launch>

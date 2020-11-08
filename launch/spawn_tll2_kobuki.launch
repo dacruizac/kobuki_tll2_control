@@ -14,6 +14,8 @@
   <arg name="pitch" default="0.0"/>
   <arg name="yaw" default="$(eval -90.0 * 3.141592 / 180.0)"/>
 
+  <param name="ang" value="$(arg yaw)"/>
+
   <!--group ns="$(arg robot_namespace)"-->
 
     <!-- Load robot URDF description -->
@@ -36,5 +38,9 @@
         name="robot_state_publisher" 
         output="screen"
     />
+
+    <include file="$(find kobuki_tll2_control)/launch/tll2_node.xml">
+        <arg name="ang" value="$(arg yaw)"/> 
+    </include>
 
 </launch>

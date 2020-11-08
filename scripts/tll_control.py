@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 import rospy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool,Int8
 import numpy as np
 from   rospy.numpy_msg import numpy_msg
 from tf.transformations import rotation_matrix 
@@ -13,13 +13,26 @@ import tf_conversions
 from geometry_msgs.msg import TransformStamped,Twist
 from pid_control import controller
 
+import sys
+
 class control_node(object):
     def __init__(self):
+        self.ang=None
+        if rospy.has_param("ang"):
+            rospy.logwarn("param")
+            self.ang=rospy.get_param("ang")
+        elif len(sys.argv) >= 2:
+            rospy.logwarn("arg")
+            self.ang=float(sys.argv[1])
+        else:
+            rospy.logwarn("default")
+            self.ang=np.deg2rad(-90)
+
         self.init_vars()
 
         self.rate=rospy.Rate(10)
 
-        self.init_first_TM(np.deg2rad(-90))
+        self.init_first_TM(self.ang)
 
 
         if (not self.initial_calibration()):
@@ -27,12 +40,20 @@ class control_node(object):
         
         self.calc_odom_transf()
 
+        while (not self.init_flag and not rospy.is_shutdown()):
+            self.rate.sleep()
+
+        rospy.logwarn("----------------------------------------------")
+
         while (not rospy.is_shutdown() and (np.linalg.norm(self.actual_pos-self.goal)>0.1 or len(self.point_set)>0)):
             self.get_odom()
             
             self.calc_odom_transf()
             
-            if (np.linalg.norm(self.actual_pos-self.goal)<0.1 and len(self.point_set)>0):
+            if (np.linalg.norm(self.actual_pos-self.goal)<0.1 and len(self.point_set)>0 and self.method==0):
+                self.goal=np.array([self.point_set.pop(0)],dtype=np.float)
+                self.goal=np.transpose(self.goal)
+            elif (np.linalg.norm(self.actual_pos-self.goal)<0.6 and len(self.point_set)>0 and self.method==1):
                 self.goal=np.array([self.point_set.pop(0)],dtype=np.float)
                 self.goal=np.transpose(self.goal)
             
@@ -50,17 +71,25 @@ class control_node(object):
             print(ang_err)
             print(self.original_fr)
 
-            self.control_conditional_action(ang_err,pos_err)
+            if (self.method==0):
+                self.control_conditional_action(ang_err,pos_err)
+            else:
+                self.control_complete_action(ang_err,pos_err)
 
             self.rate.sleep()
 
     def init_callback(self,msg):
         self.init_flag=msg.data
 
+    def method_callback(self,msg):
+        self.method=msg.data
+
     def init_vars(self):
         self.init_flag=False
+        self.method=0
         self.actual_pos=np.zeros((2,1),dtype=np.float)
         rospy.Subscriber("tll2/begin_control",Bool,callback=self.init_callback,queue_size=10)
+        rospy.Subscriber("tll2/control_method",Int8,callback=self.method_callback,queue_size=10)
         self.controllers=controller(0.4,1.0,0.3,np.pi/3)
         self.point_set=[[0, 0], [-3.5, 0], [-3.5, 3.5], [1.5, 3.5], [1.5, -1.5], [3.5, -1.5]]
         self.point_set+=[[3.5, -8.0], [-2.5, -8.0], [-2.5, -5.5], [1.5, -5.5], [1.5, -3.5],[-1.0, -3.5]]
@@ -139,3 +168,4 @@ class control_node(object):
         self.tw_msg.angular.z=ang_cmd
         vel_cmd=self.controllers.linear_control(np.linalg.norm(pos_err))
         self.tw_msg.linear.x=vel_cmd
+        self.velocity_pub.publish(self.tw_msg)
