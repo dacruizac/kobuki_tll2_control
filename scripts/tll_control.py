@@ -90,7 +90,7 @@ class control_node(object):
         self.actual_pos=np.zeros((2,1),dtype=np.float)
         rospy.Subscriber("tll2/begin_control",Bool,callback=self.init_callback,queue_size=10)
         rospy.Subscriber("tll2/control_method",Int8,callback=self.method_callback,queue_size=10)
-        self.controllers=controller(0.4,1.0,0.3,np.pi/3)
+        self.controllers=controller(0.5,1.0,0.3,np.pi/3)
         self.point_set=[[0, 0], [-3.5, 0], [-3.5, 3.5], [1.5, 3.5], [1.5, -1.5], [3.5, -1.5]]
         self.point_set+=[[3.5, -8.0], [-2.5, -8.0], [-2.5, -5.5], [1.5, -5.5], [1.5, -3.5],[-1.0, -3.5]]
         # Para realizar un broadcast
